@@ -2,7 +2,6 @@
 #include <sys/stat.h>
 #include <sys/file.h>
 #include <unistd.h>
-#include <stdio.h>
 
 int main(int argc, char *argv[]) {
     int n, infile, outfile;

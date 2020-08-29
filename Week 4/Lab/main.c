@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "arithmetic.c"
+#include "arithmetic.h"
 
 int main(int argc, char *argv[]) {
     int a,b;
