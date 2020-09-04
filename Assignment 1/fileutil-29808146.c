@@ -8,8 +8,6 @@
 #include <libgen.h>
 
 int search(char *key, char *arr[], int arrLen);
-char* findFileName(char *dir);
-char* findFileDir(char *filepath) ;
 int isPath(char *path);
 void writeToFile(int infile, int outfile);
 
@@ -40,7 +38,7 @@ int main(int argc, char *argv[]) {
         dir = argv[1];
     }
 
-    filename = findFileName(dir);
+    filename = basename(strdup(dir));
     printf("File name: %s\n", filename);
 
     // Opens file unless error occurs
@@ -50,30 +48,34 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
-
     // MAIN ACTIONS 
     if (dIndex != -1) {
         // -d present
         char* outpath = strcat(strcat(targetdir, "/"), filename);
-        printf("%s", outpath);
 
         // make output file
-        if ((outfile = open(outpath, O_WRONLY | O_CREAT | O_EXCL, 0664)) < 0) {
-            // close files
-            perror("Destination directory already has a file with the same name as the source file OR directory does not exist");
-            exit(2);
+        while ((outfile = open(outpath, O_WRONLY | O_CREAT | O_EXCL, 0664)) < 0) {
+            if (fIndex != -1) {
+                // if in force mode, unlink file
+                close(outfile);
+                unlink(outpath);
+            } else {
+                // close files
+                perror("Destination directory already has a file with the same name as the source file OR directory does not exist");
+                exit(2);
+            }
         }
 
         writeToFile(infile, outfile);
 
-        msg = "Copy successful\n";
-        write(1, msg, strlen(msg));
-
-        
-        // if (mIndex != -1) {
-
-        // }
-
+        if (mIndex != -1) {
+            unlink(dir);
+            msg = "Move successful\n";
+            write(1, msg, strlen(msg));
+        } else {
+            msg = "Copy successful\n";
+            write(1, msg, strlen(msg));
+        }
 
     } else if (mIndex == -1 && fIndex == -1) {
         // No arguments present 
@@ -89,45 +91,9 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
-
-    // TASK 2
-    // Loop over file and print outputs
-
-
-    /*
-    // TASK 3
-    int dPos = search("-d", argv, argc);
-    if (argc > 2) {
-        char firstChar = argv[dPos+1][0];
-        if (strcmp(&firstChar, "/" ) == 0) {
-            // append file name to end
-            // char targetDir = strcat(argv[dPos+1], );
-
-
-            if ((outFile = open("/mnt/c/Users/nchon/Documents/FIT2100/Assignment\\ 1/empty.txt", O_WRONLY | O_CREAT | O_EXCL)) < 0) {
-                // close files
-                perror("Destination directory already has a file with the same name as the source file OR directory does not exist");
-                exit(2);
-            }
-
-            // Copy infile to outFile
-            lseek(infile, 0, SEEK_SET);
-            while ((inbytes = read(infile, buffer, nbytes)) != 0) {
-                outbytes = write(outFile, buffer, inbytes);
-                if (outbytes == 0) break;
-            }
-            
-        }
-        msg = "Copy successful\n";
-        write(1, msg, strlen(msg));
-    }
-
-    */
-
     close(infile);
     close(outfile);
     exit(0);
-
 }
 
 void writeToFile(int infile, int outfile) {
@@ -152,14 +118,6 @@ int search(char *key, char *arr[], int arrLen) {
         }
     } 
     return -1;
-}
-
-char* findFileName(char *filepath) {
-    return basename(strdup(filepath));
-}
-
-char* findFileDir(char *filepath) {
-    return dirname(strdup(filepath));
 }
 
 int isPath(char *path) {
