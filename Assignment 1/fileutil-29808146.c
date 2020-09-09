@@ -4,7 +4,6 @@
 #include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
-#include <stdio.h>
 #include <libgen.h>
 
 int search(char *key, char *arr[], int arrLen);
@@ -23,9 +22,6 @@ int main(int argc, char *argv[]) {
     int dIndex = search("-d", argv, argc);
     int mIndex = search("-M", argv, argc);
 
-    printf("argc:%d\n", argc);
-    printf("d:%d ,M:%d , F:%d\n", dIndex, mIndex, fIndex);
-
     // PREPROCESSING: Check if directory follows -d flag
     if (dIndex != -1 && (dIndex + 2 <= argc) && isPath(argv[dIndex+1]) == 0) {
         targetdir = argv[dIndex+1];
@@ -39,12 +35,12 @@ int main(int argc, char *argv[]) {
     }
 
     filename = basename(strdup(dir));
-    printf("File name: %s\n", filename);
 
     // Opens file unless error occurs
     if ((infile = open(dir, O_RDONLY)) < 0) {
         // close file
-        perror("File could not be opened");
+        msg = "File could not be opened";
+        write(2, msg, strlen(msg));
         exit(1);
     }
 
@@ -61,7 +57,8 @@ int main(int argc, char *argv[]) {
                 unlink(outpath);
             } else {
                 // close files
-                perror("Destination directory already has a file with the same name as the source file OR directory does not exist");
+                msg = "Destination directory already has a file with the same name as the source file OR directory does not exist";
+                write(2, msg, strlen(msg));
                 exit(2);
             }
         }
@@ -83,11 +80,13 @@ int main(int argc, char *argv[]) {
         writeToFile(infile, 1);        
     } else if (fIndex != -1) {
         // -F present only
-        perror("Invalid argument, -F is redundant as nothing to force here!");
+        msg = "Invalid argument, -F is redundant as nothing to force here!";
+        write(2, msg, strlen(msg));
         exit(1);
     } else {
         // -F OR -M present only
-        perror("Invalid argument, no destination to move the file!");
+        msg = "Invalid argument, no destination to move the file!";
+        write(2, msg, strlen(msg));
         exit(1);
     }
 
