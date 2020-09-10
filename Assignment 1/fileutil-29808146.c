@@ -21,7 +21,6 @@
  * files. The copying/moving actions can also be done in force mode, ensuring that files are
  * copied and moved, even if a file with the same name is in the target directory.
  */
-
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/file.h>
