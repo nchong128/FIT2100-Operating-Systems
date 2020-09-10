@@ -2,8 +2,8 @@
  * File name: fileutil-29808146.c
  * Author name: Nicholas Lin Ren Chong
  * Student ID: 29808146
- * Start date: 1st September 2020
- * Last modified date: 10th September 2020
+ * Start date: 1 September 2020
+ * Last modified date: 11 September 2020
  * Description: 
  * This source file contains the code required for the fileutil utility module,
  * created for Assignment 1 of FIT2100, S2 2020.The functionality provided includes
@@ -109,18 +109,18 @@ int main(int argc, char *argv[]) {
             exit(1);
         } 
 
-        // open output file
+        // attempt to open output file
         int tries = 0;
         while ((outFile = open(outpath, O_WRONLY | O_CREAT | O_EXCL, 00700)) < 0) {
             if (fIndex != -1 && tries == 0) {
-                // if in force mode, unlink file
+                // if in force mode, unlink file and try again
                 msg = "fileutil: FORCE MODE ACTIVE\n";
                 write(1, msg, strlen(msg));
                 close(outFile);
                 unlink(outpath);
                 tries += 1;
             } else {
-                // close files
+                // close file and exit
                 msg = "fileutil: destination directory already has a file with the "
                       "same name as the source file OR directory does not exist\n";
                 write(2, msg, strlen(msg));
@@ -130,6 +130,7 @@ int main(int argc, char *argv[]) {
 
         writeToFile(inFile, outFile);
 
+        // if moving the file, delete the original file
         if (mIndex != -1) {
             unlink(dir);
             msg = "Move successful\n";
@@ -139,16 +140,16 @@ int main(int argc, char *argv[]) {
             write(1, msg, strlen(msg));
         }
     } else if (mIndex == -1 && fIndex == -1) {
-        // No arguments present 
-        // PRINT FILE CONTENTS TO STDOUT
+        // No arguments present
+        // print file to stdout
         writeToFile(inFile, 1);        
     } else if (fIndex != -1) {
-        // -F present only
+        // -F present only -> error
         msg = "fileutil: invalid argument, -F is redundant as nothing to force here! \n";
         write(2, msg, strlen(msg));
         exit(1);
     } else {
-        // -F OR -M present only
+        // -F OR -M present only -> error
         msg = "fileutil: invalid argument, no destination to move the file! \n";
         write(2, msg, strlen(msg));
         exit(1);
@@ -232,8 +233,8 @@ int isPath(char *path) {
 int invalidFlagsExist(int argc, char *argv[]) {
     int fCount, dCount, mCount;
 
+    // loop over command arguments
     for (int i = 1; i < argc; i++) {
-        // it is a path
         if (isPath(argv[i]) == 0) {
             // allow it to be the first argument
             // also allow if -d flag is beforehand
@@ -250,6 +251,7 @@ int invalidFlagsExist(int argc, char *argv[]) {
             return 1;
         }
 
+        // if any count of valid flag surpasses 1, its invalid 
         if (fCount > 1 || dCount > 1 || mCount > 1) return 1;
     }
 
