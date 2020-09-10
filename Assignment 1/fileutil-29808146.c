@@ -5,16 +5,20 @@
  * Start date: 1st September 2020
  * Last modified date: 10th September 2020
  * Description: 
- * This source file contains the code required for the fileutil utility module, created for Assignment 1 of FIT2100, S2 2020.
- * The functionality provided includes copying, moving and printing of text files, similar to cp, mv and cat respectively.
- * Please refer to the README.txt file for instructions on how to use this utility. DO NOT USE THIS FILE DIRECTLY.
+ * This source file contains the code required for the fileutil utility module,
+ * created for Assignment 1 of FIT2100, S2 2020.The functionality provided includes
+ * copying, moving and printing of text files, similar to cp, mv and cat respectively.
+ * Please refer to the README.txt file for instructions on how to use this utility.
+ * DO NOT USE THIS FILE DIRECTLY.
  * 
  * The program works through 2 phases, preprocessing and execution.
- * During the preprocessing phase, the input parameters (from the command line) are searched for valid flags and arguments, outputting
- * errors upon finding any invalid options. Additional steps like opening the input file and defining the directories are also done here.
+ * During the preprocessing phase, the input parameters (from the command line) are
+ * searched for valid flags and arguments, outputting errors upon finding any invalid options.
+ * Additional steps like opening the input file and defining the directories are also done here.
  * 
- * The execution phase consists of conducting the appropriate action depending on the parameters defined during the preprocessing phase,
- * this includes printing, copying and moving files. The copying/moving actions can also be done in force mode, ensuring that files are
+ * The execution phase consists of conducting the appropriate action depending on the
+ * parameters defined during the preprocessing phase, this includes printing, copying and moving
+ * files. The copying/moving actions can also be done in force mode, ensuring that files are
  * copied and moved, even if a file with the same name is in the target directory.
  */
 
@@ -26,11 +30,23 @@
 #include <stdlib.h>
 #include <libgen.h>
 
+// Headers defined
 int search(char *key, char *arr[], int arrLen);
 int isPath(char *path);
 void writeToFile(int inFile, int outFile);
 int invalidFlagsExist(int argc, char *argv[]);
+int main(int argc, char *argv[]);
 
+/*
+ * Function: main
+ * ----------------
+ *   Main function that does conducts the preprocessing and execution steps
+ * 
+ *   argc: int representing the number of arguments
+ *   argv: array of pointers for command line variables
+ * 
+ *   returns: Exit code   
+ */
 int main(int argc, char *argv[]) {
     int inFile, outFile;
     char *dir = "./logfile.txt";
@@ -87,7 +103,8 @@ int main(int argc, char *argv[]) {
 
         // exit if moving/copying a file from a directory to the same directory
         if (strcmp(outpath, dir) == 0) {
-            msg = "fileutil: destination directory is the same as the source directory";
+            msg = "fileutil: destination directory is the same as "
+                  "the source directory\n";
             write(2, msg, strlen(msg));
             exit(1);
         } 
@@ -104,7 +121,8 @@ int main(int argc, char *argv[]) {
                 tries += 1;
             } else {
                 // close files
-                msg = "fileutil: destination directory already has a file with the same name as the source file OR directory does not exist\n";
+                msg = "fileutil: destination directory already has a file with the "
+                      "same name as the source file OR directory does not exist\n";
                 write(2, msg, strlen(msg));
                 exit(2);
             }
@@ -136,16 +154,29 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
+    // close all files and exit with code 0
     close(inFile);
     close(outFile);
     exit(0);
 }
 
+/*
+ * Function: writeToFile
+ * ------------------------
+ * Writes from one file to another. Done by continuously reading from the input
+ * file and pushing it to the output file.
+ * 
+ * inFile: file descriptor of the input file
+ * outFile: file descriptor of the output file
+ * 
+ * returns: void
+ */
 void writeToFile(int inFile, int outFile) {
     ssize_t inbytes, outbytes;
     size_t nbytes = 1024;
     char buffer[nbytes];
 
+    // put cursor at start of file
     lseek(inFile, 0, SEEK_SET);
     while ((inbytes = read(inFile, buffer, nbytes)) != 0) {
         outbytes = write(outFile, buffer, inbytes);
@@ -154,22 +185,50 @@ void writeToFile(int inFile, int outFile) {
     }
 }
 
+/*
+ * Function: search
+ * ------------------------
+ * Searches for a target string inside an array
+ * 
+ * key: string to locate in array
+ * arr: array of pointers to locate the string in
+ * arrLen: int for the size of array
+ * 
+ * returns: first located index of key, if not located returns -1
+ */
 int search(char *key, char *arr[], int arrLen) {
-    // Returns first located index of key
-    // If not in arr, returns -1
     for (int i = 0; i < arrLen; i++) {
-        if (strcmp(key, arr[i]) == 0 ) {
+        if (strcmp(key, arr[i]) == 0) {
             return i;
         }
     } 
     return -1;
 }
 
+/*
+ * Function: isPath
+ * ------------------
+ * checks if a given string is a path
+ * 
+ * path: string representing input path to be checked
+ * 
+ * returns: 0 if the string is a path, not 0 otherwise
+ */
 int isPath(char *path) {
     char firstChar = path[0];
     return strcmp(&firstChar, "/");
 }
 
+/*
+ * Function: invalidFlagsExist
+ * -----------------------------
+ * checks if invalid flags exist inside the arguments
+ * 
+ * argc: int representing the number of arguments
+ * argv: array of pointers for command line variables
+ * 
+ * returns: 1 if the command line has invalid flag, 0 otherwise
+ */
 int invalidFlagsExist(int argc, char *argv[]) {
     int fCount, dCount, mCount;
 
