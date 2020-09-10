@@ -1,3 +1,23 @@
+/**
+ * File name: fileutil-29808146.c
+ * Author name: Nicholas Lin Ren Chong
+ * Student ID: 29808146
+ * Start date: 1st September 2020
+ * Last modified date: 10th September 2020
+ * Description: 
+ * This source file contains the code required for the fileutil utility module, created for Assignment 1 of FIT2100, S2 2020.
+ * The functionality provided includes copying, moving and printing of text files, similar to cp, mv and cat respectively.
+ * Please refer to the README.txt file for instructions on how to use this utility. DO NOT USE THIS FILE DIRECTLY.
+ * 
+ * The program works through 2 phases, preprocessing and execution.
+ * During the preprocessing phase, the input parameters (from the command line) are searched for valid flags and arguments, outputting
+ * errors upon finding any invalid options. Additional steps like opening the input file and defining the directories are also done here.
+ * 
+ * The execution phase consists of conducting the appropriate action depending on the parameters defined during the preprocessing phase,
+ * this includes printing, copying and moving files. The copying/moving actions can also be done in force mode, ensuring that files are
+ * copied and moved, even if a file with the same name is in the target directory.
+ */
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/file.h>
@@ -8,15 +28,15 @@
 
 int search(char *key, char *arr[], int arrLen);
 int isPath(char *path);
-void writeToFile(int infile, int outfile);
+void writeToFile(int inFile, int outFile);
 int invalidFlagsExist(int argc, char *argv[]);
 
 int main(int argc, char *argv[]) {
-    int infile, outfile;
+    int inFile, outFile;
     char *dir = "./logfile.txt";
     char *filename = "logfile.txt";
     char *msg;
-    char *targetdir;
+    char *targetDir;
     
     // PREPROCESSING: Check for invalid flags
     if (invalidFlagsExist(argc, argv) == 1) {
@@ -33,7 +53,10 @@ int main(int argc, char *argv[]) {
     // PREPROCESSING: Check if directory follows -d flag
     if (dIndex != -1) {
         if ((dIndex + 2 <= argc) && isPath(argv[dIndex+1]) == 0) {
-            targetdir = argv[dIndex+1];
+            // Compose 'clean' version of target directory using basename and dirname
+            char* dirPart = dirname(strdup(argv[dIndex+1]));
+            char* filePart = basename(strdup(argv[dIndex+1]));
+            targetDir = strcat(strcat(dirPart, "/"), filePart);
         } else {
             msg  = "fileutil: immediately after -d, a directory path was expected\n";
             write(2, msg, strlen(msg));
@@ -51,26 +74,34 @@ int main(int argc, char *argv[]) {
     filename = basename(strdup(dir));
 
     // Opens file unless error occurs
-    if ((infile = open(dir, O_RDONLY)) < 0) {
-        // close file
+    if ((inFile = open(dir, O_RDONLY)) < 0) {
         msg = "fileutil: file could not be opened\n";
         write(2, msg, strlen(msg));
         exit(1);
     }
 
-    // MAIN ACTIONS 
+    // EXECUTION PHASE
     if (dIndex != -1) {
         // -d present
-        char* outpath = strcat(strcat(targetdir, "/"), filename);
+        char* outpath = strcat(strcat(targetDir, "/"), filename);
+
+        // exit if moving/copying a file from a directory to the same directory
+        if (strcmp(outpath, dir) == 0) {
+            msg = "fileutil: destination directory is the same as the source directory";
+            write(2, msg, strlen(msg));
+            exit(1);
+        } 
 
         // open output file
-        while ((outfile = open(outpath, O_WRONLY | O_CREAT | O_EXCL, 00700)) < 0) {
-            if (fIndex != -1) {
+        int tries = 0;
+        while ((outFile = open(outpath, O_WRONLY | O_CREAT | O_EXCL, 00700)) < 0) {
+            if (fIndex != -1 && tries == 0) {
                 // if in force mode, unlink file
                 msg = "fileutil: FORCE MODE ACTIVE\n";
                 write(1, msg, strlen(msg));
-                close(outfile);
+                close(outFile);
                 unlink(outpath);
+                tries += 1;
             } else {
                 // close files
                 msg = "fileutil: destination directory already has a file with the same name as the source file OR directory does not exist\n";
@@ -79,20 +110,20 @@ int main(int argc, char *argv[]) {
             }
         }
 
-        writeToFile(infile, outfile);
+        writeToFile(inFile, outFile);
 
         if (mIndex != -1) {
             unlink(dir);
-            msg = "fileutil: move successful\n";
+            msg = "Move successful\n";
             write(1, msg, strlen(msg));
         } else {
-            msg = "fileutil: copy successful\n";
+            msg = "Copy successful\n";
             write(1, msg, strlen(msg));
         }
     } else if (mIndex == -1 && fIndex == -1) {
         // No arguments present 
         // PRINT FILE CONTENTS TO STDOUT
-        writeToFile(infile, 1);        
+        writeToFile(inFile, 1);        
     } else if (fIndex != -1) {
         // -F present only
         msg = "fileutil: invalid argument, -F is redundant as nothing to force here! \n";
@@ -105,19 +136,19 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
-    close(infile);
-    close(outfile);
+    close(inFile);
+    close(outFile);
     exit(0);
 }
 
-void writeToFile(int infile, int outfile) {
+void writeToFile(int inFile, int outFile) {
     ssize_t inbytes, outbytes;
     size_t nbytes = 1024;
     char buffer[nbytes];
 
-    lseek(infile, 0, SEEK_SET);
-    while ((inbytes = read(infile, buffer, nbytes)) != 0) {
-        outbytes = write(outfile, buffer, inbytes);
+    lseek(inFile, 0, SEEK_SET);
+    while ((inbytes = read(inFile, buffer, nbytes)) != 0) {
+        outbytes = write(outFile, buffer, inbytes);
 
         if (outbytes == 0) break;
     }
@@ -143,19 +174,21 @@ int invalidFlagsExist(int argc, char *argv[]) {
     int fCount, dCount, mCount;
 
     for (int i = 1; i < argc; i++) {
-        if ((((isPath(argv[i]) == 0) && i != 1) && (strcmp("-d", argv[i-1]) != 0)) 
-            && (strcmp("-d", argv[i]) != 0) 
-            && (strcmp("-M", argv[i]) != 0) 
-            && (strcmp("-F", argv[i]) != 0)) {
+        // it is a path
+        if (isPath(argv[i]) == 0) {
+            // allow it to be the first argument
+            // also allow if -d flag is beforehand
+            if (i != 1 && strcmp("-d", argv[i-1]) != 0) {
                 return 1;
-        }
-
-        if (strcmp("-F", argv[i]) == 0) {
+            }
+        } else if (strcmp("-F", argv[i]) == 0) {
             fCount += 1;
         } else if (strcmp("-M", argv[i]) == 0) {
             mCount += 1;
         } else if (strcmp("-d", argv[i]) == 0) {
             dCount += 1;
+        } else {
+            return 1;
         }
 
         if (fCount > 1 || dCount > 1 || mCount > 1) return 1;
