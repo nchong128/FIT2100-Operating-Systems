@@ -28,13 +28,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <libgen.h>
-
-// Headers defined
-int search(char *key, char *arr[], int arrLen);
-int isPath(char *path);
-void writeToFile(int inFile, int outFile);
-int invalidFlagsExist(int argc, char *argv[]);
-int main(int argc, char *argv[]);
+#include "fileutil-29808146.h"
 
 /*
  * Function: main
@@ -47,11 +41,10 @@ int main(int argc, char *argv[]);
  *   returns: Exit code   
  */
 int main(int argc, char *argv[]) {
-    int inFile, outFile;
+    int inFile, outFile, fIndex, dIndex, mIndex, tries;
     char *dir = "./logfile.txt";
     char *filename = "logfile.txt";
-    char *msg;
-    char *targetDir;
+    char *msg, *targetDir, *outPath;
     
     // PREPROCESSING: Check for invalid flags
     if (invalidFlagsExist(argc, argv) == 1) {
@@ -61,17 +54,15 @@ int main(int argc, char *argv[]) {
     }
 
     // PREPROCESSING: CHECK FOR F, d and M FLAGS
-    int fIndex = search("-F", argv, argc);
-    int dIndex = search("-d", argv, argc);
-    int mIndex = search("-M", argv, argc);
+    fIndex = search("-F", argv, argc);
+    dIndex = search("-d", argv, argc);
+    mIndex = search("-M", argv, argc);
 
     // PREPROCESSING: Check if directory follows -d flag
     if (dIndex != -1) {
         if ((dIndex + 2 <= argc) && isPath(argv[dIndex+1]) == 0) {
             // Compose 'clean' version of target directory using basename and dirname
-            char* dirPart = dirname(strdup(argv[dIndex+1]));
-            char* filePart = basename(strdup(argv[dIndex+1]));
-            targetDir = strcat(strcat(dirPart, "/"), filePart);
+            targetDir = strcat(strcat(dirname(strdup(argv[dIndex+1])), "/"), basename(strdup(argv[dIndex+1])));
         } else {
             msg  = "fileutil: immediately after -d, a directory path was expected\n";
             write(2, msg, strlen(msg));
@@ -98,10 +89,10 @@ int main(int argc, char *argv[]) {
     // EXECUTION PHASE
     if (dIndex != -1) {
         // -d present
-        char* outpath = strcat(strcat(targetDir, "/"), filename);
+        outPath = strcat(strcat(targetDir, "/"), filename);
 
         // exit if moving/copying a file from a directory to the same directory
-        if (strcmp(outpath, dir) == 0) {
+        if (strcmp(outPath, dir) == 0) {
             msg = "fileutil: destination directory is the same as "
                   "the source directory\n";
             write(2, msg, strlen(msg));
@@ -109,14 +100,14 @@ int main(int argc, char *argv[]) {
         } 
 
         // attempt to open output file
-        int tries = 0;
-        while ((outFile = open(outpath, O_WRONLY | O_CREAT | O_EXCL, 00700)) < 0) {
+        tries = 0;
+        while ((outFile = open(outPath, O_WRONLY | O_CREAT | O_EXCL, 0664)) < 0) {
             if (fIndex != -1 && tries == 0) {
                 // if in force mode, unlink file and try again
                 msg = "fileutil: FORCE MODE ACTIVE\n";
                 write(1, msg, strlen(msg));
                 close(outFile);
-                unlink(outpath);
+                unlink(outPath);
                 tries += 1;
             } else {
                 // close file and exit
@@ -143,12 +134,12 @@ int main(int argc, char *argv[]) {
         // print file to stdout
         writeToFile(inFile, 1);        
     } else if (fIndex != -1) {
-        // -F present only -> error
+        // -F present only -> raise error
         msg = "fileutil: invalid argument, -F is redundant as nothing to force here! \n";
         write(2, msg, strlen(msg));
         exit(1);
     } else {
-        // -F OR -M present only -> error
+        // -F OR -M present only -> raise error
         msg = "fileutil: invalid argument, no destination to move the file! \n";
         write(2, msg, strlen(msg));
         exit(1);

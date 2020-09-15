@@ -11,6 +11,19 @@ This will generate a fileutil file.
 
 USAGE
 ----------------------------------
-To use this file...
+The format is as follows:
+$ ./fileutil [SOURCEFILE] [OPTIONS]
 
-TBC
+SOURCEFILE: absolute path of the file
+
+OPTIONS:
+-d destDir:
+  Allows to input a path for the destination directory for copying or moving
+  the source file. destDir must follow -d
+
+-M: 
+  Changes the behaviour of the -d argument to move the file instead of copying
+  Only valid when used in conjunction with the -d ... argument
+
+-F:
+  Makes the program overwrite any file which has the same name as the source file

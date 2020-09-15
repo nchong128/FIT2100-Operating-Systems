@@ -16,7 +16,7 @@ int main(int argc, char *argv[]) {
         count(start, 'P');
         wait(NULL);     /* to get printing done before shell prompt */
     } else if(pid == 0) {    /* child got here */
-        execl("/bin/ls", "ls", "-l", NULL); /* execute ls command */
+        execl("/home/nchong/dev/nextprime", "/home/nchong/dev/nextprime", "", NULL); /* execute ls command */
     } else {            /* there is a problem with fork */
         perror("Failed to fork a process\n");
         exit(1);
