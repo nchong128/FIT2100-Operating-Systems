@@ -25,7 +25,7 @@ int main(int argc, char *argv[]) {
     char *curruser, *msg;
     int indices[] = { 1,3,0,2 };
 
-    if ((outfile = open("recordfile", O_WRONLY | O_CREAT, 0664)) < 0) {
+    if ((outfile = open("recordfile", O_WRONLY | O_CREAT, 33)) < 0) {
         perror("recordfile");
         exit(1);
     }
